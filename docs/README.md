@@ -1,4 +1,4 @@
-#ftpbrutal
+# ftpbrutal
 
 <strong>ftpbrutal</strong> is a brute-force tool for FTP servers. It attempts to connect by testing passwords from a provided wordlist until a successful connection is established.
 
