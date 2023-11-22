@@ -11,6 +11,6 @@ services:
     volumes:
       - ./ftp-data:/home/vsftpd/data
     environment:
-      - FTP_USER=johndoe
-      - FTP_PASS=iloveu
-      - PASV_ADDRESS=127.0.0.2
+      - FTP_USER=john
+      - FTP_PASS=jessica
+      - PASV_ADDRESS=127.0.0.1
