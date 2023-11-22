@@ -37,8 +37,6 @@ struct Args {
 async fn main() {
     simple_logger::init().unwrap();
 
-    //thread join gandles
-
     let args = Args::parse();
 
     let words = read_file(&args.w)
