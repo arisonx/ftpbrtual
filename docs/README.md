@@ -33,8 +33,13 @@ Here are a few examples to demonstrate how to use the tool:
 - Basic usage:
 
     ```bash
-    $ ./target/release/ftp-brutal -w rockyouu.txt  -p 21 -u johndoe -ip 127.0.0.2
+   $ cargo run -- --u john --w rockyouu.txt --p 21 --ip 127.0.0.3
     ```
+- Or
+
+   ``` bash
+   $ ./target/release/ftp-brutal --u john --w rockyouu.txt --p 21 --ip 127.0.0.3
+   ```
 
 ## System Requirements
 
