@@ -44,7 +44,7 @@ Here are a few examples to demonstrate how to use the tool:
 ### V1 (no multi thread)
 [v1.webm](https://github.com/voidex1/ftpbrtual/assets/150809384/20c6f29e-452b-4f40-849a-9f5ca0456c12)
 
-### V2 Multi Trhead
+### V2 Multi Thread
 [v2.webm](https://github.com/voidex1/ftpbrtual/assets/150809384/0b1062e2-f29c-4558-ad49-806f0ef1ec6d)
 
 ## System Requirements
