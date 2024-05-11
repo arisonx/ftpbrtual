@@ -57,9 +57,12 @@ async fn main() {
                 Ok(_) => {
                     info!("[+] SUCCESS: {}", &word);
                     info!("PASSWORD FOUND: ---{}---", &word);
-                    std::process::exit(0);
+                    tokio::spawn(async move {
+                        let _ = std::fs::write("./pass.txt", &word);
+                        info!("open the file: ./pass.txt");
+                        std::process::exit(0);
+                    });
                 }
-
                 Err(_) => {
                     error!("[-] FAILED: {}", &word);
                 }
